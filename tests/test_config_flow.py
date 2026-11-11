@@ -36,14 +36,18 @@ USER_INPUT = {
 
 
 async def test_user_flow_gueltiger_token(hass: HomeAssistant):
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
     assert result["type"] == FlowResultType.FORM
 
     with patch(
         "custom_components.sonnen_autarky.config_flow.SonnenApiClient.async_get_status",
         new=AsyncMock(return_value=VALID_STATUS),
     ):
-        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], USER_INPUT
+        )
 
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_IP_ADDRESS] == "192.168.1.50"
@@ -51,23 +55,31 @@ async def test_user_flow_gueltiger_token(hass: HomeAssistant):
 
 
 async def test_user_flow_falscher_token(hass: HomeAssistant):
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
     with patch(
         "custom_components.sonnen_autarky.config_flow.SonnenApiClient.async_get_status",
         new=AsyncMock(side_effect=SonnenAuthError("401")),
     ):
-        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], USER_INPUT
+        )
     assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "invalid_auth"}
 
 
 async def test_user_flow_ip_nicht_erreichbar(hass: HomeAssistant):
-    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
     with patch(
         "custom_components.sonnen_autarky.config_flow.SonnenApiClient.async_get_status",
         new=AsyncMock(side_effect=SonnenApiError("timeout")),
     ):
-        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], USER_INPUT
+        )
     assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
 
@@ -77,8 +89,12 @@ async def test_options_flow(hass: HomeAssistant):
         "custom_components.sonnen_autarky.config_flow.SonnenApiClient.async_get_status",
         new=AsyncMock(return_value=VALID_STATUS),
     ):
-        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
-        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": SOURCE_USER}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], USER_INPUT
+        )
 
     entry = result["result"]
     options_result = await hass.config_entries.options.async_init(entry.entry_id)

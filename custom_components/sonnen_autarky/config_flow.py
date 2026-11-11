@@ -48,11 +48,13 @@ def _options_schema(current: int) -> vol.Schema:
 
 
 class SonnenAutarkyConfigFlow(ConfigFlow, domain=DOMAIN):
-    """UI-Konfiguration: IP, Auth-Token, Intervall – mit Live-Validierung."""
+    """UI-Konfiguration: IP, Auth-Token, Intervall - mit Live-Validierung."""
 
     VERSION = 1
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
             host = (
@@ -84,10 +86,14 @@ class SonnenAutarkyConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
             return self.async_show_form(
                 step_id="user",
-                data_schema=self.add_suggested_values_to_schema(USER_SCHEMA, user_input),
+                data_schema=self.add_suggested_values_to_schema(
+                    USER_SCHEMA, user_input
+                ),
                 errors=errors,
             )
-        return self.async_show_form(step_id="user", data_schema=USER_SCHEMA, errors=errors)
+        return self.async_show_form(
+            step_id="user", data_schema=USER_SCHEMA, errors=errors
+        )
 
     @staticmethod
     @callback
@@ -98,7 +104,9 @@ class SonnenAutarkyConfigFlow(ConfigFlow, domain=DOMAIN):
 class SonnenAutarkyOptionsFlow(OptionsFlow):
     """Optionen: nur das Abrufintervall."""
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         if user_input is not None:
             return self.async_create_entry(data=user_input)
         current = int(
@@ -107,4 +115,6 @@ class SonnenAutarkyOptionsFlow(OptionsFlow):
                 self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
             )
         )
-        return self.async_show_form(step_id="init", data_schema=_options_schema(current))
+        return self.async_show_form(
+            step_id="init", data_schema=_options_schema(current)
+        )

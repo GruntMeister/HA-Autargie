@@ -20,7 +20,9 @@ class Sample:
     w: float
 
 
-def integrate(prev: Sample, sample: Sample, max_gap: float = MAX_GAP_SECONDS) -> float | None:
+def integrate(
+    prev: Sample, sample: Sample, max_gap: float = MAX_GAP_SECONDS
+) -> float | None:
     """Trapez-Integration zwischen zwei Samples, Ergebnis in Wh.
 
     Liefert None bei dt <= 0 oder einer Lücke > max_gap (keine Extrapolation).

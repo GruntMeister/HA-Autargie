@@ -57,7 +57,9 @@ class SonnenDailyEnergySensor(SonnenAutarkyBase, RestoreEntity, SensorEntity):
     _attr_state_class = SensorStateClass.TOTAL
     _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
 
-    def __init__(self, coordinator: SonnenAutarkyCoordinator, counter: str, translation_key: str) -> None:
+    def __init__(
+        self, coordinator: SonnenAutarkyCoordinator, counter: str, translation_key: str
+    ) -> None:
         super().__init__(coordinator)
         self._counter = counter
         self._attr_translation_key = translation_key
@@ -70,7 +72,9 @@ class SonnenDailyEnergySensor(SonnenAutarkyBase, RestoreEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         attrs: dict[str, Any] = {
-            ATTR_LAST_PERIOD: round(self.coordinator.last_period_wh[self._counter] / 1000.0, 3)
+            ATTR_LAST_PERIOD: round(
+                self.coordinator.last_period_wh[self._counter] / 1000.0, 3
+            )
         }
         if self.coordinator.last_reset is not None:
             attrs[ATTR_LAST_RESET] = self.coordinator.last_reset.isoformat()
@@ -82,9 +86,13 @@ class SonnenDailyEnergySensor(SonnenAutarkyBase, RestoreEntity, SensorEntity):
         return ExtraStoredData(
             {
                 "kwh": round(self.coordinator.counters_wh[self._counter] / 1000.0, 6),
-                "last_period_kwh": round(self.coordinator.last_period_wh[self._counter] / 1000.0, 6),
+                "last_period_kwh": round(
+                    self.coordinator.last_period_wh[self._counter] / 1000.0, 6
+                ),
                 "last_reset": (
-                    self.coordinator.last_reset.isoformat() if self.coordinator.last_reset else None
+                    self.coordinator.last_reset.isoformat()
+                    if self.coordinator.last_reset
+                    else None
                 ),
                 "prev_sample_ts": prev.ts if prev else None,
                 "prev_sample_w": prev.w if prev else None,
@@ -95,21 +103,34 @@ class SonnenDailyEnergySensor(SonnenAutarkyBase, RestoreEntity, SensorEntity):
         await super().async_added_to_hass()
         last = await self.async_get_last_extra_data()
         if last is None:
-            _LOGGER.warning("Kein Restore-State für %s – starte bei 0", self._attr_unique_id)
+            _LOGGER.warning(
+                "Kein Restore-State fuer %s - starte bei 0", self._attr_unique_id
+            )
             return
         data = last.as_dict()
         try:
             kwh = float(data["kwh"])
             last_period_kwh = float(data.get("last_period_kwh") or 0.0)
             last_reset_raw = data.get("last_reset")
-            last_reset = datetime.fromisoformat(last_reset_raw) if last_reset_raw else None
+            last_reset = (
+                datetime.fromisoformat(last_reset_raw) if last_reset_raw else None
+            )
             prev: Sample | None = None
-            if data.get("prev_sample_ts") is not None and data.get("prev_sample_w") is not None:
-                prev = Sample(ts=float(data["prev_sample_ts"]), w=float(data["prev_sample_w"]))
-            self.coordinator.restore_counter(self._counter, kwh, last_period_kwh, last_reset, prev)
+            if (
+                data.get("prev_sample_ts") is not None
+                and data.get("prev_sample_w") is not None
+            ):
+                prev = Sample(
+                    ts=float(data["prev_sample_ts"]), w=float(data["prev_sample_w"])
+                )
+            self.coordinator.restore_counter(
+                self._counter, kwh, last_period_kwh, last_reset, prev
+            )
         except (KeyError, TypeError, ValueError) as err:
             _LOGGER.warning(
-                "Restore-State für %s beschädigt (%s) – starte bei 0", self._attr_unique_id, err
+                "Restore-State fuer %s beschaedigt (%s) - starte bei 0",
+                self._attr_unique_id,
+                err,
             )
 
 
@@ -119,7 +140,9 @@ class SonnenPercentageSensor(SonnenAutarkyBase, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = PERCENTAGE
 
-    def __init__(self, coordinator: SonnenAutarkyCoordinator, translation_key: str) -> None:
+    def __init__(
+        self, coordinator: SonnenAutarkyCoordinator, translation_key: str
+    ) -> None:
         super().__init__(coordinator)
         self._attr_translation_key = translation_key
         self._attr_unique_id = f"{coordinator.serial_number}_{translation_key}"
@@ -183,9 +206,15 @@ async def async_setup_entry(
     coordinator: SonnenAutarkyCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         [
-            SonnenDailyEnergySensor(coordinator, COUNTER_CONSUMPTION, "hausverbrauch_heute"),
-            SonnenDailyEnergySensor(coordinator, COUNTER_GRID_IMPORT, "netzbezug_heute"),
-            SonnenDailyEnergySensor(coordinator, COUNTER_GRID_EXPORT, "netzeinspeisung_heute"),
+            SonnenDailyEnergySensor(
+                coordinator, COUNTER_CONSUMPTION, "hausverbrauch_heute"
+            ),
+            SonnenDailyEnergySensor(
+                coordinator, COUNTER_GRID_IMPORT, "netzbezug_heute"
+            ),
+            SonnenDailyEnergySensor(
+                coordinator, COUNTER_GRID_EXPORT, "netzeinspeisung_heute"
+            ),
             SonnenAutarkyTodaySensor(coordinator),
             SonnenLiveAutarkySensor(coordinator),
             SonnenSelfConsumptionSensor(coordinator),

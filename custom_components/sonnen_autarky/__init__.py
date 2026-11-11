@@ -1,4 +1,4 @@
-"""Sonnen Autarky – Tages-Autarkie aus der lokalen sonnenBatterie-API v2."""
+"""Sonnen Autarky - Tages-Autarkie aus der lokalen sonnenBatterie-API v2."""
 
 from __future__ import annotations
 
@@ -56,7 +56,9 @@ def _scan_interval(entry: ConfigEntry) -> int:
 class SonnenAutarkyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Pollt die Batterie und akkumuliert die Tageszähler (Wh)."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, client: SonnenApiClient) -> None:
+    def __init__(
+        self, hass: HomeAssistant, entry: ConfigEntry, client: SonnenApiClient
+    ) -> None:
         super().__init__(
             hass,
             _LOGGER,
@@ -114,7 +116,9 @@ class SonnenAutarkyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.counters_wh[key] = 0.0
         self.current_date = now.date()
         self.last_reset = now
-        _LOGGER.info("Tageswechsel erkannt: Zähler zurückgesetzt, Vortageswerte in last_period gespeichert")
+        _LOGGER.info(
+            "Tageswechsel erkannt: Zaehler zurueckgesetzt, last_period gespeichert"
+        )
 
     def restore_counter(
         self,

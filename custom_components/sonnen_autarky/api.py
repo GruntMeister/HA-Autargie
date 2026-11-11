@@ -54,7 +54,9 @@ class SonnenApiClient:
             async with asyncio.timeout(self._timeout):
                 async with self._session.get(self._url, headers=self._headers) as resp:
                     if resp.status in (401, 403):
-                        raise SonnenAuthError(f"Authentifizierung fehlgeschlagen (HTTP {resp.status})")
+                        raise SonnenAuthError(
+                            f"Authentifizierung fehlgeschlagen (HTTP {resp.status})"
+                        )
                     if resp.status != 200:
                         raise SonnenApiError(f"Unerwarteter HTTP-Status {resp.status}")
                     data = await resp.json(content_type=None)
