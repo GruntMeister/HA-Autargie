@@ -17,10 +17,12 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import selector
 
+from .calc import SOURCE_UNITS, UNIT_WATT
 from .const import (
     CONF_CONSUMPTION_ENTITY,
     CONF_GRID_FEED_IN_ENTITY,
     CONF_PRODUCTION_ENTITY,
+    CONF_SOURCE_UNIT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     MAX_SCAN_INTERVAL,
@@ -37,6 +39,11 @@ USER_SCHEMA = vol.Schema(
         vol.Required(CONF_CONSUMPTION_ENTITY): _SENSOR_SELECTOR,
         vol.Required(CONF_GRID_FEED_IN_ENTITY): _SENSOR_SELECTOR,
         vol.Required(CONF_PRODUCTION_ENTITY): _SENSOR_SELECTOR,
+        vol.Required(CONF_SOURCE_UNIT, default=UNIT_WATT): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=list(SOURCE_UNITS), translation_key=CONF_SOURCE_UNIT
+            )
+        ),
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
             vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL)
         ),
@@ -96,6 +103,7 @@ class SonnenAutarkyConfigFlow(ConfigFlow, domain=DOMAIN):
                     title="Sonnen Autarky",
                     data={
                         **{key: user_input[key] for key in SOURCE_ENTITIES},
+                        CONF_SOURCE_UNIT: user_input[CONF_SOURCE_UNIT],
                         CONF_SCAN_INTERVAL: user_input[CONF_SCAN_INTERVAL],
                     },
                 )

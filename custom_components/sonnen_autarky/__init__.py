@@ -24,17 +24,20 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.util import dt as dt_util
 
 from .calc import (
+    UNIT_WATT,
     Sample,
     autarky_degree,
     day_changed,
     integrate,
     self_consumption_rate,
     split_grid,
+    to_watt,
 )
 from .const import (
     CONF_CONSUMPTION_ENTITY,
     CONF_GRID_FEED_IN_ENTITY,
     CONF_PRODUCTION_ENTITY,
+    CONF_SOURCE_UNIT,
     COUNTER_CONSUMPTION,
     COUNTER_GRID_EXPORT,
     COUNTER_GRID_IMPORT,
@@ -87,6 +90,7 @@ class SonnenAutarkyCoordinator(DataUpdateCoordinator[dict[str, float]]):
         )
         self.entry = entry
         self.serial_number = resolve_serial_number(hass, entry)
+        self._unit = entry.data.get(CONF_SOURCE_UNIT, UNIT_WATT)
         self.counters_wh: dict[str, float] = {key: 0.0 for key in COUNTERS}
         self.last_period_wh: dict[str, float] = {key: 0.0 for key in COUNTERS}
         self.prev_samples: dict[str, Sample] = {}
@@ -98,7 +102,7 @@ class SonnenAutarkyCoordinator(DataUpdateCoordinator[dict[str, float]]):
         if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             raise UpdateFailed(f"Quell-Sensor {entity_id} nicht verfügbar")
         try:
-            return float(state.state)
+            return to_watt(float(state.state), self._unit)
         except ValueError as err:
             raise UpdateFailed(
                 f"Quell-Sensor {entity_id} nicht numerisch: {state.state}"

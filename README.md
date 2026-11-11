@@ -41,7 +41,8 @@ numerische Watt-Werte bereitstellt (z. B. weltmeyer/ha_sonnenbatterie):
 1. Repo in HACS als benutzerdefiniertes Repository hinzufügen (Kategorie: Integration)
 2. „Sonnen Autarky" installieren und HA neu starten
 3. In HA unter **Einstellungen > Geräte & Dienste > Hinzufügen** „Sonnen Autarky" wählen
-4. Die drei Quell-Sensoren der sonnenBatterie-Integration auswählen und optional das Abrufintervall anpassen
+4. Die drei Quell-Sensoren der sonnenBatterie-Integration auswählen, die Einheit der
+   Sensoren (W oder kW) angeben und optional das Abrufintervall anpassen
 
 ## Tests
 
@@ -56,5 +57,5 @@ und wird in `tests/test_calc.py` ohne Home Assistant getestet.
 ## Bekannte Einschränkungen
 
 - HA-Downtime innerhalb eines Tages fehlt im Tageszähler (kein Zurückrechnen aus der History)
-- Die Quell-Sensoren müssen numerische Watt-Werte liefern; Einheiten-Konvertierung
-  (z. B. kW statt W) übernimmt die bestehende sonnenBatterie-Integration
+- Quell-Sensoren müssen numerische Werte liefern; die Einheit (W/kW) wird im
+  Config Flow gewählt und intern nach Watt umgerechnet

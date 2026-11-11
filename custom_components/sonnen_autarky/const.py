@@ -5,6 +5,7 @@ DOMAIN = "sonnen_autarky"
 CONF_CONSUMPTION_ENTITY = "consumption_entity"
 CONF_GRID_FEED_IN_ENTITY = "grid_feed_in_entity"
 CONF_PRODUCTION_ENTITY = "production_entity"
+CONF_SOURCE_UNIT = "source_unit"
 SOURCE_ENTITIES = (
     CONF_CONSUMPTION_ENTITY,
     CONF_GRID_FEED_IN_ENTITY,

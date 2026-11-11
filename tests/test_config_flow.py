@@ -14,6 +14,7 @@ from custom_components.sonnen_autarky.const import (
     CONF_CONSUMPTION_ENTITY,
     CONF_GRID_FEED_IN_ENTITY,
     CONF_PRODUCTION_ENTITY,
+    CONF_SOURCE_UNIT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
@@ -26,6 +27,7 @@ USER_INPUT = {
     CONF_CONSUMPTION_ENTITY: ENTITY_CONSUMPTION,
     CONF_GRID_FEED_IN_ENTITY: ENTITY_GRID,
     CONF_PRODUCTION_ENTITY: ENTITY_PRODUCTION,
+    CONF_SOURCE_UNIT: "W",
     CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
 }
 
@@ -49,6 +51,19 @@ async def test_user_flow_ok(hass: HomeAssistant):
     assert result["data"][CONF_CONSUMPTION_ENTITY] == ENTITY_CONSUMPTION
     assert result["data"][CONF_GRID_FEED_IN_ENTITY] == ENTITY_GRID
     assert result["data"][CONF_PRODUCTION_ENTITY] == ENTITY_PRODUCTION
+    assert result["data"][CONF_SOURCE_UNIT] == "W"
+
+
+async def test_user_flow_einheit_kilowatt(hass: HomeAssistant):
+    _set_source_states(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {**USER_INPUT, CONF_SOURCE_UNIT: "kW"}
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_SOURCE_UNIT] == "kW"
 
 
 async def test_user_flow_sensor_unavailable(hass: HomeAssistant):

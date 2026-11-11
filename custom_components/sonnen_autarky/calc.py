@@ -11,6 +11,16 @@ from datetime import date, datetime
 
 MAX_GAP_SECONDS = 300.0
 
+UNIT_WATT = "W"
+UNIT_KILOWATT = "kW"
+SOURCE_UNITS = (UNIT_WATT, UNIT_KILOWATT)
+UNIT_TO_WATT = {UNIT_WATT: 1.0, UNIT_KILOWATT: 1000.0}
+
+
+def to_watt(value: float, unit: str) -> float:
+    """Rechnet einen Quell-Sensorwert je nach gewählter Einheit in Watt um."""
+    return value * UNIT_TO_WATT.get(unit, 1.0)
+
 
 @dataclass(frozen=True)
 class Sample:

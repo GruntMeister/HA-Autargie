@@ -22,6 +22,7 @@ from calc import (
     live_autarky,
     self_consumption_rate,
     split_grid,
+    to_watt,
 )
 
 
@@ -128,6 +129,17 @@ class TestSelfConsumptionRate:
 
     def test_wird_geklemmt(self):
         assert self_consumption_rate(10000.0, 5000.0) == 0.0
+
+
+class TestToWatt:
+    def test_watt_bleibt_watt(self):
+        assert to_watt(500.0, "W") == pytest.approx(500.0)
+
+    def test_kilowatt_wird_umgerechnet(self):
+        assert to_watt(1.5, "kW") == pytest.approx(1500.0)
+
+    def test_unbekannte_einheit_faellt_auf_watt_zurueck(self):
+        assert to_watt(42.0, "irgendwas") == pytest.approx(42.0)
 
 
 class TestDayChanged:

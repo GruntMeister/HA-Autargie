@@ -8,7 +8,8 @@
           "consumption_entity": "Sensor Hausverbrauch (W)",
           "grid_feed_in_entity": "Sensor GridFeedIn (W) – negativ = Netzbezug, positiv = Einspeisung",
           "production_entity": "Sensor PV-Produktion (W)",
-          "scan_interval": "Abrufintervall (Sekunden)"
+          "scan_interval": "Abrufintervall (Sekunden)",
+          "source_unit": "Einheit der Quell-Sensoren"
         }
       }
     },
@@ -18,6 +19,14 @@
     },
     "abort": {
       "already_configured": "Diese sonnenBatterie ist bereits eingerichtet."
+    },
+    "selector": {
+      "source_unit": {
+        "options": {
+          "W": "Watt (W)",
+          "kW": "Kilowatt (kW)"
+        }
+      }
     }
   },
   "options": {
@@ -32,12 +41,24 @@
   },
   "entity": {
     "sensor": {
-      "autarkiegrad_heute": { "name": "Autarkiegrad heute" },
-      "autarkiegrad_aktuell": { "name": "Autarkiegrad aktuell" },
-      "eigenverbrauchsquote_heute": { "name": "Eigenverbrauchsquote heute" },
-      "hausverbrauch_heute": { "name": "Hausverbrauch heute" },
-      "netzbezug_heute": { "name": "Netzbezug heute" },
-      "netzeinspeisung_heute": { "name": "Netzeinspeisung heute" }
+      "autarkiegrad_heute": {
+        "name": "Autarkiegrad heute"
+      },
+      "autarkiegrad_aktuell": {
+        "name": "Autarkiegrad aktuell"
+      },
+      "eigenverbrauchsquote_heute": {
+        "name": "Eigenverbrauchsquote heute"
+      },
+      "hausverbrauch_heute": {
+        "name": "Hausverbrauch heute"
+      },
+      "netzbezug_heute": {
+        "name": "Netzbezug heute"
+      },
+      "netzeinspeisung_heute": {
+        "name": "Netzeinspeisung heute"
+      }
     }
   }
 }

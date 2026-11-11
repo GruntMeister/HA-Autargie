@@ -8,7 +8,8 @@
           "consumption_entity": "Home consumption sensor (W)",
           "grid_feed_in_entity": "GridFeedIn sensor (W) – negative = grid import, positive = feed-in",
           "production_entity": "PV production sensor (W)",
-          "scan_interval": "Polling interval (seconds)"
+          "scan_interval": "Polling interval (seconds)",
+          "source_unit": "Unit of the source sensors"
         }
       }
     },
@@ -18,6 +19,14 @@
     },
     "abort": {
       "already_configured": "This sonnenBatterie is already configured."
+    },
+    "selector": {
+      "source_unit": {
+        "options": {
+          "W": "Watt (W)",
+          "kW": "Kilowatt (kW)"
+        }
+      }
     }
   },
   "options": {
@@ -32,12 +41,24 @@
   },
   "entity": {
     "sensor": {
-      "autarkiegrad_heute": { "name": "Autarky degree today" },
-      "autarkiegrad_aktuell": { "name": "Current autarky degree" },
-      "eigenverbrauchsquote_heute": { "name": "Self-consumption rate today" },
-      "hausverbrauch_heute": { "name": "Home consumption today" },
-      "netzbezug_heute": { "name": "Grid import today" },
-      "netzeinspeisung_heute": { "name": "Grid feed-in today" }
+      "autarkiegrad_heute": {
+        "name": "Autarky degree today"
+      },
+      "autarkiegrad_aktuell": {
+        "name": "Current autarky degree"
+      },
+      "eigenverbrauchsquote_heute": {
+        "name": "Self-consumption rate today"
+      },
+      "hausverbrauch_heute": {
+        "name": "Home consumption today"
+      },
+      "netzbezug_heute": {
+        "name": "Grid import today"
+      },
+      "netzeinspeisung_heute": {
+        "name": "Grid feed-in today"
+      }
     }
   }
 }
