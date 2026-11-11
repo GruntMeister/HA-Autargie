@@ -1,0 +1,43 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "sonnenBatterie verbinden",
+        "description": "Lokale API v2 der sonnenBatterie. Das Auth-Token findest du im lokalen Webinterface unter Einstellungen > API.",
+        "data": {
+          "ip_address": "IP-Adresse der Batterie",
+          "auth_token": "Auth-Token",
+          "scan_interval": "Abrufintervall (Sekunden)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen – bitte IP-Adresse und Netzwerk prüfen.",
+      "invalid_auth": "Auth-Token ungültig (HTTP 401/403).",
+      "unknown": "Unbekannter Fehler."
+    },
+    "abort": {
+      "already_configured": "Diese Batterie ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sonnen Autarky – Einstellungen",
+        "data": {
+          "scan_interval": "Abrufintervall (Sekunden)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "autarkiegrad_heute": { "name": "Autarkiegrad heute" },
+      "autarkiegrad_aktuell": { "name": "Autarkiegrad aktuell" },
+      "eigenverbrauchsquote_heute": { "name": "Eigenverbrauchsquote heute" },
+      "hausverbrauch_heute": { "name": "Hausverbrauch heute" },
+      "netzbezug_heute": { "name": "Netzbezug heute" },
+      "netzeinspeisung_heute": { "name": "Netzeinspeisung heute" }
+    }
+  }
+}
