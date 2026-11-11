@@ -160,7 +160,15 @@ class SonnenAutarkyTodaySensor(SonnenPercentageSensor):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {ATTR_LAST_PERIOD: round(self.coordinator.autarky_yesterday, 1)}
+        return {
+            ATTR_LAST_PERIOD: round(self.coordinator.autarky_yesterday, 1),
+            "netzbezug_heute_kwh": round(
+                self.coordinator.counters_wh[COUNTER_GRID_IMPORT] / 1000.0, 3
+            ),
+            "hausverbrauch_heute_kwh": round(
+                self.coordinator.counters_wh[COUNTER_CONSUMPTION] / 1000.0, 3
+            ),
+        }
 
 
 class SonnenLiveAutarkySensor(SonnenPercentageSensor):
@@ -181,6 +189,16 @@ class SonnenLiveAutarkySensor(SonnenPercentageSensor):
             ),
             1,
         )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        data = self.coordinator.data
+        if not data:
+            return {}
+        return {
+            "grid_feed_in_w": round(float(data[FIELD_GRID_FEED_IN_W]), 1),
+            "hausverbrauch_w": round(float(data[FIELD_CONSUMPTION_W]), 1),
+        }
 
 
 class SonnenSelfConsumptionSensor(SonnenPercentageSensor):
