@@ -5,98 +5,91 @@ import pytest
 pytest.importorskip("homeassistant")
 pytest.importorskip("pytest_homeassistant_custom_component")
 
-from unittest.mock import AsyncMock, patch
-
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.sonnen_autarky.api import SonnenApiError, SonnenAuthError
 from custom_components.sonnen_autarky.const import (
-    CONF_AUTH_TOKEN,
-    CONF_IP_ADDRESS,
+    CONF_CONSUMPTION_ENTITY,
+    CONF_GRID_FEED_IN_ENTITY,
+    CONF_PRODUCTION_ENTITY,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
 
-VALID_STATUS = {
-    "Consumption_W": 500,
-    "GridFeedIn_W": -200,
-    "Pac_total_W": 300,
-    "Production_W": 1500,
-    "SerialNumber": "12345678",
-}
+ENTITY_CONSUMPTION = "sensor.sonnen_hausverbrauch_w"
+ENTITY_GRID = "sensor.sonnen_grid_feed_in_w"
+ENTITY_PRODUCTION = "sensor.sonnen_pv_produktion_w"
 
 USER_INPUT = {
-    CONF_IP_ADDRESS: "192.168.1.50",
-    CONF_AUTH_TOKEN: "geheim-token",
+    CONF_CONSUMPTION_ENTITY: ENTITY_CONSUMPTION,
+    CONF_GRID_FEED_IN_ENTITY: ENTITY_GRID,
+    CONF_PRODUCTION_ENTITY: ENTITY_PRODUCTION,
     CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
 }
 
 
-async def test_user_flow_gueltiger_token(hass: HomeAssistant):
+def _set_source_states(hass: HomeAssistant) -> None:
+    hass.states.async_set(ENTITY_CONSUMPTION, "500")
+    hass.states.async_set(ENTITY_GRID, "-200")
+    hass.states.async_set(ENTITY_PRODUCTION, "1500")
+
+
+async def test_user_flow_ok(hass: HomeAssistant):
+    _set_source_states(hass)
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )
     assert result["type"] == FlowResultType.FORM
-
-    with patch(
-        "custom_components.sonnen_autarky.config_flow.SonnenApiClient.async_get_status",
-        new=AsyncMock(return_value=VALID_STATUS),
-    ):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], USER_INPUT
-        )
-
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], USER_INPUT
+    )
     assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert result["data"][CONF_IP_ADDRESS] == "192.168.1.50"
-    assert result["data"][CONF_AUTH_TOKEN] == "geheim-token"
+    assert result["data"][CONF_CONSUMPTION_ENTITY] == ENTITY_CONSUMPTION
+    assert result["data"][CONF_GRID_FEED_IN_ENTITY] == ENTITY_GRID
+    assert result["data"][CONF_PRODUCTION_ENTITY] == ENTITY_PRODUCTION
 
 
-async def test_user_flow_falscher_token(hass: HomeAssistant):
+async def test_user_flow_sensor_unavailable(hass: HomeAssistant):
+    hass.states.async_set(ENTITY_CONSUMPTION, "unavailable")
+    hass.states.async_set(ENTITY_GRID, "-200")
+    hass.states.async_set(ENTITY_PRODUCTION, "1500")
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )
-    with patch(
-        "custom_components.sonnen_autarky.config_flow.SonnenApiClient.async_get_status",
-        new=AsyncMock(side_effect=SonnenAuthError("401")),
-    ):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], USER_INPUT
-        )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], USER_INPUT
+    )
     assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "invalid_auth"}
+    assert result["errors"] == {CONF_CONSUMPTION_ENTITY: "invalid_entity"}
 
 
-async def test_user_flow_ip_nicht_erreichbar(hass: HomeAssistant):
+async def test_user_flow_sensors_missing(hass: HomeAssistant):
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": SOURCE_USER}
     )
-    with patch(
-        "custom_components.sonnen_autarky.config_flow.SonnenApiClient.async_get_status",
-        new=AsyncMock(side_effect=SonnenApiError("timeout")),
-    ):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], USER_INPUT
-        )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], USER_INPUT
+    )
     assert result["type"] == FlowResultType.FORM
-    assert result["errors"] == {"base": "cannot_connect"}
+    assert result["errors"] == {
+        CONF_CONSUMPTION_ENTITY: "invalid_entity",
+        CONF_GRID_FEED_IN_ENTITY: "invalid_entity",
+        CONF_PRODUCTION_ENTITY: "invalid_entity",
+    }
 
 
 async def test_options_flow(hass: HomeAssistant):
-    with patch(
-        "custom_components.sonnen_autarky.config_flow.SonnenApiClient.async_get_status",
-        new=AsyncMock(return_value=VALID_STATUS),
-    ):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": SOURCE_USER}
-        )
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], USER_INPUT
-        )
-
+    _set_source_states(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], USER_INPUT
+    )
     entry = result["result"]
+
     options_result = await hass.config_entries.options.async_init(entry.entry_id)
     assert options_result["type"] == FlowResultType.FORM
     options_result = await hass.config_entries.options.async_configure(

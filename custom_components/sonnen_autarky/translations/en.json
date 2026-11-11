@@ -2,22 +2,22 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect sonnenBatterie",
-        "description": "Local API v2 of the sonnenBatterie. You can find the auth token in the local web interface under Settings > API.",
+        "title": "Set up Sonnen Autarky",
+        "description": "Select the watt sensors of your existing sonnenBatterie integration. All of them must provide numeric values.",
         "data": {
-          "ip_address": "Battery IP address",
-          "auth_token": "Auth token",
+          "consumption_entity": "Home consumption sensor (W)",
+          "grid_feed_in_entity": "GridFeedIn sensor (W) – negative = grid import, positive = feed-in",
+          "production_entity": "PV production sensor (W)",
           "scan_interval": "Polling interval (seconds)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Connection failed – please check IP address and network.",
-      "invalid_auth": "Auth token invalid (HTTP 401/403).",
+      "invalid_entity": "Sensor not found, unavailable or not numeric.",
       "unknown": "Unknown error."
     },
     "abort": {
-      "already_configured": "This battery is already configured."
+      "already_configured": "This sonnenBatterie is already configured."
     }
   },
   "options": {

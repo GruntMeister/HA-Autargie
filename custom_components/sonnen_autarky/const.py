@@ -2,24 +2,25 @@
 
 DOMAIN = "sonnen_autarky"
 
-CONF_IP_ADDRESS = "ip_address"
-CONF_AUTH_TOKEN = "auth_token"
+CONF_CONSUMPTION_ENTITY = "consumption_entity"
+CONF_GRID_FEED_IN_ENTITY = "grid_feed_in_entity"
+CONF_PRODUCTION_ENTITY = "production_entity"
+SOURCE_ENTITIES = (
+    CONF_CONSUMPTION_ENTITY,
+    CONF_GRID_FEED_IN_ENTITY,
+    CONF_PRODUCTION_ENTITY,
+)
 
 DEFAULT_SCAN_INTERVAL = 30
 MIN_SCAN_INTERVAL = 5
 MAX_SCAN_INTERVAL = 300
-
-API_PATH = "/api/v2/status"
-API_TIMEOUT = 10
 
 ATTR_LAST_PERIOD = "last_period"
 ATTR_LAST_RESET = "last_reset"
 
 FIELD_CONSUMPTION_W = "Consumption_W"
 FIELD_GRID_FEED_IN_W = "GridFeedIn_W"
-FIELD_PAC_TOTAL_W = "Pac_total_W"
 FIELD_PRODUCTION_W = "Production_W"
-FIELD_SERIAL_NUMBER = "SerialNumber"
 
 COUNTER_CONSUMPTION = "consumption"
 COUNTER_GRID_IMPORT = "grid_import"

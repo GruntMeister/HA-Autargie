@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 import voluptuous as vol
@@ -11,25 +12,31 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlow,
 )
-from homeassistant.const import CONF_SCAN_INTERVAL
-from homeassistant.core import callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.const import CONF_SCAN_INTERVAL, STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import selector
 
-from .api import SonnenApiClient, SonnenApiError, SonnenAuthError
 from .const import (
-    CONF_AUTH_TOKEN,
-    CONF_IP_ADDRESS,
+    CONF_CONSUMPTION_ENTITY,
+    CONF_GRID_FEED_IN_ENTITY,
+    CONF_PRODUCTION_ENTITY,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    FIELD_SERIAL_NUMBER,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
+    SOURCE_ENTITIES,
+)
+
+_SENSOR_SELECTOR = selector.EntitySelector(
+    selector.EntitySelectorConfig(domain="sensor")
 )
 
 USER_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_IP_ADDRESS): str,
-        vol.Required(CONF_AUTH_TOKEN): str,
+        vol.Required(CONF_CONSUMPTION_ENTITY): _SENSOR_SELECTOR,
+        vol.Required(CONF_GRID_FEED_IN_ENTITY): _SENSOR_SELECTOR,
+        vol.Required(CONF_PRODUCTION_ENTITY): _SENSOR_SELECTOR,
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
             vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL)
         ),
@@ -47,8 +54,19 @@ def _options_schema(current: int) -> vol.Schema:
     )
 
 
+def _entity_numeric(hass: HomeAssistant, entity_id: str) -> bool:
+    state = hass.states.get(entity_id)
+    if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+        return False
+    try:
+        float(state.state)
+    except ValueError:
+        return False
+    return True
+
+
 class SonnenAutarkyConfigFlow(ConfigFlow, domain=DOMAIN):
-    """UI-Konfiguration: IP, Auth-Token, Intervall - mit Live-Validierung."""
+    """UI-Konfiguration: Auswahl der Quell-Sensoren der sonnenBatterie-Integration."""
 
     VERSION = 1
 
@@ -57,30 +75,27 @@ class SonnenAutarkyConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
-            host = (
-                user_input[CONF_IP_ADDRESS]
-                .strip()
-                .removeprefix("http://")
-                .removeprefix("https://")
-                .removesuffix("/")
-            )
-            token = user_input[CONF_AUTH_TOKEN].strip()
-            client = SonnenApiClient(async_get_clientsession(self.hass), host, token)
-            try:
-                status = await client.async_get_status()
-            except SonnenAuthError:
-                errors["base"] = "invalid_auth"
-            except SonnenApiError:
-                errors["base"] = "cannot_connect"
-            else:
-                serial = str(status.get(FIELD_SERIAL_NUMBER) or host)
-                await self.async_set_unique_id(serial)
+            for key in SOURCE_ENTITIES:
+                if not _entity_numeric(self.hass, user_input[key]):
+                    errors[key] = "invalid_entity"
+            if not errors:
+                registry = er.async_get(self.hass)
+                reg_entry = registry.async_get(user_input[CONF_CONSUMPTION_ENTITY])
+                if reg_entry and reg_entry.device_id:
+                    unique_id = reg_entry.device_id
+                else:
+                    digest = hashlib.sha1(
+                        "|".join(
+                            sorted(user_input[k] for k in SOURCE_ENTITIES)
+                        ).encode()
+                    ).hexdigest()[:16]
+                    unique_id = digest
+                await self.async_set_unique_id(str(unique_id))
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=f"sonnenBatterie ({host})",
+                    title="Sonnen Autarky",
                     data={
-                        CONF_IP_ADDRESS: host,
-                        CONF_AUTH_TOKEN: token,
+                        **{key: user_input[key] for key in SOURCE_ENTITIES},
                         CONF_SCAN_INTERVAL: user_input[CONF_SCAN_INTERVAL],
                     },
                 )

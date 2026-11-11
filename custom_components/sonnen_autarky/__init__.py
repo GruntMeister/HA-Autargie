@@ -1,20 +1,28 @@
-"""Sonnen Autarky - Tages-Autarkie aus der lokalen sonnenBatterie-API v2."""
+"""Sonnen Autarky - Tages-Autarkie aus den Sensoren der bestehenden
+sonnenBatterie-Integration (Variante A: kein eigenes API-Polling)."""
 
 from __future__ import annotations
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_SCAN_INTERVAL, Platform
+from homeassistant.const import (
+    CONF_SCAN_INTERVAL,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+    Platform,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.update_coordinator import (
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
 from homeassistant.util import dt as dt_util
 
-from .api import SonnenApiClient, SonnenApiError
 from .calc import (
     Sample,
     autarky_degree,
@@ -24,8 +32,9 @@ from .calc import (
     split_grid,
 )
 from .const import (
-    CONF_AUTH_TOKEN,
-    CONF_IP_ADDRESS,
+    CONF_CONSUMPTION_ENTITY,
+    CONF_GRID_FEED_IN_ENTITY,
+    CONF_PRODUCTION_ENTITY,
     COUNTER_CONSUMPTION,
     COUNTER_GRID_EXPORT,
     COUNTER_GRID_IMPORT,
@@ -36,7 +45,6 @@ from .const import (
     FIELD_CONSUMPTION_W,
     FIELD_GRID_FEED_IN_W,
     FIELD_PRODUCTION_W,
-    FIELD_SERIAL_NUMBER,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,37 +61,67 @@ def _scan_interval(entry: ConfigEntry) -> int:
     )
 
 
-class SonnenAutarkyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Pollt die Batterie und akkumuliert die Tageszähler (Wh)."""
+def resolve_serial_number(hass: HomeAssistant, entry: ConfigEntry) -> str:
+    """Seriennummer über Geräte-Registry der Quell-Entities auflösen."""
+    entity_registry = er.async_get(hass)
+    device_registry = dr.async_get(hass)
+    reg_entry = entity_registry.async_get(entry.data[CONF_CONSUMPTION_ENTITY])
+    device_id = reg_entry.device_id if reg_entry else None
+    if device_id:
+        device = device_registry.async_get(device_id)
+        if device is not None:
+            return str(device.serial_number or device.name or device_id)
+    return str(entry.data[CONF_CONSUMPTION_ENTITY])
 
-    def __init__(
-        self, hass: HomeAssistant, entry: ConfigEntry, client: SonnenApiClient
-    ) -> None:
+
+class SonnenAutarkyCoordinator(DataUpdateCoordinator[dict[str, float]]):
+    """Liest die Watt-Sensoren der sonnenBatterie-Integration und akkumuliert
+    die Tageszähler (Wh)."""
+
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=_scan_interval(entry)),
         )
-        self.client = client
-        self.serial_number: str = entry.data[CONF_IP_ADDRESS]
+        self.entry = entry
+        self.serial_number = resolve_serial_number(hass, entry)
         self.counters_wh: dict[str, float] = {key: 0.0 for key in COUNTERS}
         self.last_period_wh: dict[str, float] = {key: 0.0 for key in COUNTERS}
         self.prev_samples: dict[str, Sample] = {}
         self.current_date: date | None = None
         self.last_reset: datetime | None = None
 
-    async def _async_update_data(self) -> dict[str, Any]:
+    def _read_watt(self, entity_id: str) -> float:
+        state = self.hass.states.get(entity_id)
+        if state is None or state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            raise UpdateFailed(f"Quell-Sensor {entity_id} nicht verfügbar")
         try:
-            status = await self.client.async_get_status()
-        except SonnenApiError as err:
-            raise UpdateFailed(str(err)) from err
+            return float(state.state)
+        except ValueError as err:
+            raise UpdateFailed(
+                f"Quell-Sensor {entity_id} nicht numerisch: {state.state}"
+            ) from err
+
+    async def _async_update_data(self) -> dict[str, float]:
+        status = {
+            FIELD_CONSUMPTION_W: self._read_watt(
+                self.entry.data[CONF_CONSUMPTION_ENTITY]
+            ),
+            FIELD_GRID_FEED_IN_W: self._read_watt(
+                self.entry.data[CONF_GRID_FEED_IN_ENTITY]
+            ),
+            FIELD_PRODUCTION_W: self._read_watt(
+                self.entry.data[CONF_PRODUCTION_ENTITY]
+            ),
+        }
 
         now = dt_util.now()
         ts = now.timestamp()
-        consumption_w = float(status[FIELD_CONSUMPTION_W])
-        grid_w = float(status[FIELD_GRID_FEED_IN_W])
-        production_w = float(status[FIELD_PRODUCTION_W])
+        consumption_w = status[FIELD_CONSUMPTION_W]
+        grid_w = status[FIELD_GRID_FEED_IN_W]
+        production_w = status[FIELD_PRODUCTION_W]
         import_w, export_w = split_grid(grid_w)
 
         if self.current_date is not None and day_changed(self.current_date, now):
@@ -138,18 +176,6 @@ class SonnenAutarkyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.prev_samples[key] = prev_sample
 
     @property
-    def consumption_kwh(self) -> float:
-        return self.counters_wh[COUNTER_CONSUMPTION] / 1000.0
-
-    @property
-    def grid_import_kwh(self) -> float:
-        return self.counters_wh[COUNTER_GRID_IMPORT] / 1000.0
-
-    @property
-    def grid_export_kwh(self) -> float:
-        return self.counters_wh[COUNTER_GRID_EXPORT] / 1000.0
-
-    @property
     def autarky_today(self) -> float:
         return autarky_degree(
             self.counters_wh[COUNTER_GRID_IMPORT],
@@ -179,22 +205,15 @@ class SonnenAutarkyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    client = SonnenApiClient(
-        async_get_clientsession(hass),
-        entry.data[CONF_IP_ADDRESS],
-        entry.data[CONF_AUTH_TOKEN],
-    )
-    coordinator = SonnenAutarkyCoordinator(hass, entry, client)
+    coordinator = SonnenAutarkyCoordinator(hass, entry)
     try:
         await coordinator.async_config_entry_first_refresh()
     except ConfigEntryNotReady:
         raise
     except Exception as err:
-        raise ConfigEntryNotReady(f"Initiales Polling fehlgeschlagen: {err}") from err
-
-    coordinator.serial_number = str(
-        (coordinator.data or {}).get(FIELD_SERIAL_NUMBER) or entry.data[CONF_IP_ADDRESS]
-    )
+        raise ConfigEntryNotReady(
+            f"Initiales Lesen der Quell-Sensoren fehlgeschlagen: {err}"
+        ) from err
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
