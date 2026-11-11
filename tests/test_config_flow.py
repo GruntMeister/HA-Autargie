@@ -5,15 +5,15 @@ import pytest
 pytest.importorskip("homeassistant")
 pytest.importorskip("pytest_homeassistant_custom_component")
 
-from unittest.mock import AsyncMock, patch  # noqa: E402
+from unittest.mock import AsyncMock, patch
 
-from homeassistant.config_entries import SOURCE_USER  # noqa: E402
-from homeassistant.const import CONF_SCAN_INTERVAL  # noqa: E402
-from homeassistant.core import HomeAssistant  # noqa: E402
-from homeassistant.data_entry_flow import FlowResultType  # noqa: E402
+from homeassistant.config_entries import SOURCE_USER
+from homeassistant.const import CONF_SCAN_INTERVAL
+from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.sonnen_autarky.api import SonnenApiError, SonnenAuthError  # noqa: E402
-from custom_components.sonnen_autarky.const import (  # noqa: E402
+from custom_components.sonnen_autarky.api import SonnenApiError, SonnenAuthError
+from custom_components.sonnen_autarky.const import (
     CONF_AUTH_TOKEN,
     CONF_IP_ADDRESS,
     DEFAULT_SCAN_INTERVAL,

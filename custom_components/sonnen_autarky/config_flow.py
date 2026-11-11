@@ -5,13 +5,17 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
-
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import SonnenApiClient, SonnenAuthError, SonnenApiError
+from .api import SonnenApiClient, SonnenApiError, SonnenAuthError
 from .const import (
     CONF_AUTH_TOKEN,
     CONF_IP_ADDRESS,

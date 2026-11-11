@@ -1,7 +1,7 @@
 """Unit-Tests für die reinen Rechenfunktionen in calc.py (ohne HA)."""
 
 import sys
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
@@ -10,8 +10,7 @@ sys.path.insert(
     0, str(Path(__file__).resolve().parent.parent / "custom_components" / "sonnen_autarky")
 )
 
-import calc  # noqa: E402
-from calc import (  # noqa: E402
+from calc import (
     MAX_GAP_SECONDS,
     Sample,
     autarky_degree,
@@ -130,18 +129,18 @@ class TestSelfConsumptionRate:
 
 class TestDayChanged:
     def test_gleicher_tag(self):
-        now = datetime(2025, 6, 15, 12, 0, tzinfo=timezone.utc)
+        now = datetime(2025, 6, 15, 12, 0, tzinfo=UTC)
         assert day_changed(date(2025, 6, 15), now) is False
 
     def test_datumswechsel(self):
-        now = datetime(2025, 6, 16, 0, 5, tzinfo=timezone.utc)
+        now = datetime(2025, 6, 16, 0, 5, tzinfo=UTC)
         assert day_changed(date(2025, 6, 15), now) is True
 
     def test_sommerzeit_umstellung_bleibt_stabil(self):
         prev = date(2025, 3, 29)
-        now = datetime(2025, 3, 30, 12, 0, tzinfo=timezone.utc)
+        now = datetime(2025, 3, 30, 12, 0, tzinfo=UTC)
         assert day_changed(prev, now) is True
-        same_day = datetime(2025, 3, 30, 1, 0, tzinfo=timezone.utc)
+        same_day = datetime(2025, 3, 30, 1, 0, tzinfo=UTC)
         assert day_changed(date(2025, 3, 30), same_day) is False
 
 

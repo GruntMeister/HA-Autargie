@@ -1,0 +1,7 @@
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B", "RUF"]
+
+[lint.per-file-ignores]
+"tests/**" = ["E402"]
